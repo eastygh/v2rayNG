@@ -1,15 +1,13 @@
 package com.v2ray.ang.fmt
 
 import com.v2ray.ang.AppConfig
-import com.v2ray.ang.dto.ProfileItem
-import com.v2ray.ang.dto.V2rayConfig.OutboundBean
+import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.NetworkType
 import com.v2ray.ang.extension.idnHost
 import com.v2ray.ang.extension.isNotNullEmpty
 import com.v2ray.ang.extension.nullIfBlank
 import com.v2ray.ang.handler.MmkvManager
-import com.v2ray.ang.handler.V2rayConfigManager
 import com.v2ray.ang.util.Utils
 import java.net.URI
 
@@ -20,7 +18,7 @@ object Hysteria2Fmt : FmtBase() {
      * @param str the Hysteria2 URI string to parse
      * @return the parsed ProfileItem object, or null if parsing fails
      */
-    fun parse(str: String): ProfileItem? {
+    fun parse(str: String): ProfileItem {
         var allowInsecure = MmkvManager.decodeSettingsBool(AppConfig.PREF_ALLOW_INSECURE, false)
         val config = ProfileItem.create(EConfigType.HYSTERIA2)
 
@@ -109,33 +107,5 @@ object Hysteria2Fmt : FmtBase() {
         }
 
         return toUri(config, config.password, dicQuery)
-    }
-
-    /**
-     * Converts a ProfileItem object to an OutboundBean object.
-     *
-     * @param profileItem the ProfileItem object to convert
-     * @return the converted OutboundBean object, or null if conversion fails
-     */
-    fun toOutbound(profileItem: ProfileItem): OutboundBean? {
-        val outboundBean = V2rayConfigManager.createInitOutbound(EConfigType.HYSTERIA2) ?: return null
-        profileItem.network = NetworkType.HYSTERIA.type
-        profileItem.alpn = "h3"
-
-        outboundBean.settings?.let { server ->
-            server.address = getServerAddress(profileItem)
-            server.port = profileItem.serverPort.orEmpty().toInt()
-            server.version = 2
-        }
-
-        val sni = outboundBean.streamSettings?.let {
-            V2rayConfigManager.populateTransportSettings(it, profileItem)
-        }
-
-        outboundBean.streamSettings?.let {
-            V2rayConfigManager.populateTlsSettings(it, profileItem, sni)
-        }
-
-        return outboundBean
     }
 }

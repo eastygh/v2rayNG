@@ -1,4 +1,4 @@
-package com.v2ray.ang.dto
+package com.v2ray.ang.dto.entities
 
 data class SubscriptionItem(
     var remarks: String = "",
@@ -7,7 +7,7 @@ data class SubscriptionItem(
     val addedTime: Long = System.currentTimeMillis(),
     var lastUpdated: Long = -1,
     var autoUpdate: Boolean = false,
-    val updateInterval: Int? = null,
+    var updateInterval: Long = 1440, // in minutes, default to 24 hours
     var prevProfile: String? = null,
     var nextProfile: String? = null,
     var filter: String? = null,

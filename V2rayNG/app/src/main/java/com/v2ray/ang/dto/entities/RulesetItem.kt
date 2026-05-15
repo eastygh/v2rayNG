@@ -1,9 +1,10 @@
-package com.v2ray.ang.dto
+package com.v2ray.ang.dto.entities
 
 data class RulesetItem(
     var remarks: String? = "",
     var ip: List<String>? = null,
     var domain: List<String>? = null,
+    var process: List<String>? = null,
     var outboundTag: String = "",
     var port: String? = null,
     var network: String? = null,

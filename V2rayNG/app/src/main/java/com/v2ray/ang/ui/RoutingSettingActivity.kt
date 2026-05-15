@@ -3,7 +3,6 @@ package com.v2ray.ang.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
@@ -21,6 +20,7 @@ import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsManager
 import com.v2ray.ang.helper.SimpleItemTouchHelperCallback
 import com.v2ray.ang.util.JsonUtil
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import com.v2ray.ang.viewmodel.RoutingSettingsViewModel
 import kotlinx.coroutines.Dispatchers
@@ -92,7 +92,7 @@ class RoutingSettingActivity : HelperBaseActivity() {
                 MmkvManager.encodeSettings(AppConfig.PREF_ROUTING_DOMAIN_STRATEGY, value)
                 binding.tvDomainStrategySummary.text = value
             } catch (e: Exception) {
-                Log.e(AppConfig.TAG, "Failed to set domain strategy", e)
+                LogUtil.e(AppConfig.TAG, "Failed to set domain strategy", e)
             }
         }.show()
     }
@@ -110,7 +110,7 @@ class RoutingSettingActivity : HelperBaseActivity() {
                             }
                         }
                     } catch (e: Exception) {
-                        Log.e(AppConfig.TAG, "Failed to import predefined ruleset", e)
+                        LogUtil.e(AppConfig.TAG, "Failed to import predefined ruleset", e)
                     }
                 }
                 .setNegativeButton(android.R.string.cancel) { _, _ ->
@@ -126,7 +126,7 @@ class RoutingSettingActivity : HelperBaseActivity() {
                 val clipboard = try {
                     Utils.getClipboard(this)
                 } catch (e: Exception) {
-                    Log.e(AppConfig.TAG, "Failed to get clipboard content", e)
+                    LogUtil.e(AppConfig.TAG, "Failed to get clipboard content", e)
                     toastError(R.string.toast_failure)
                     return@setPositiveButton
                 }

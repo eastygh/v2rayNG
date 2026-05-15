@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
@@ -16,12 +15,13 @@ import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.contracts.BaseAdapterListener
 import com.v2ray.ang.databinding.ActivityUserAssetBinding
-import com.v2ray.ang.dto.AssetUrlItem
+import com.v2ray.ang.dto.entities.AssetUrlItem
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.extension.toastError
 import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsManager
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import com.v2ray.ang.viewmodel.UserAssetViewModel
 import kotlinx.coroutines.Dispatchers
@@ -84,7 +84,7 @@ class UserAssetActivity : HelperBaseActivity() {
                 MmkvManager.encodeSettings(AppConfig.PREF_GEO_FILES_SOURCES, value)
                 binding.tvGeoFilesSourcesSummary.text = value
             } catch (e: Exception) {
-                Log.e(AppConfig.TAG, "Failed to set geo files sources", e)
+                LogUtil.e(AppConfig.TAG, "Failed to set geo files sources", e)
             }
         }.show()
     }
@@ -136,7 +136,7 @@ class UserAssetActivity : HelperBaseActivity() {
             }.also { cursor.close() }
         }
     } catch (e: Exception) {
-        Log.e(AppConfig.TAG, "Failed to get cursor name", e)
+        LogUtil.e(AppConfig.TAG, "Failed to get cursor name", e)
         null
     }
 
@@ -162,7 +162,7 @@ class UserAssetActivity : HelperBaseActivity() {
                     .putExtra(UserAssetUrlActivity.ASSET_URL_QRCODE, url)
             )
         } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to import asset from URL", e)
+            LogUtil.e(AppConfig.TAG, "Failed to import asset from URL", e)
             return false
         }
         return true
@@ -173,9 +173,11 @@ class UserAssetActivity : HelperBaseActivity() {
         showLoading()
         toast(R.string.msg_downloading_content)
 
+        val proxyUsername = SettingsManager.getSocksUsername()
+        val proxyPassword = SettingsManager.getSocksPassword()
         val httpPort = SettingsManager.getHttpPort()
         lifecycleScope.launch(Dispatchers.IO) {
-            val result = viewModel.downloadGeoFiles(extDir, httpPort)
+            val result = viewModel.downloadGeoFiles(extDir, httpPort, proxyUsername, proxyPassword)
             withContext(Dispatchers.Main) {
                 if (result.successCount > 0) {
                     toast(getString(R.string.title_update_config_count, result.successCount))

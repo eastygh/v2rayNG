@@ -20,7 +20,7 @@ import com.v2ray.ang.AppConfig.TLS
 import com.v2ray.ang.AppConfig.WIREGUARD_LOCAL_ADDRESS_V4
 import com.v2ray.ang.AppConfig.WIREGUARD_LOCAL_MTU
 import com.v2ray.ang.R
-import com.v2ray.ang.dto.ProfileItem
+import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.NetworkType
 import com.v2ray.ang.extension.isNotNullEmpty
@@ -29,6 +29,7 @@ import com.v2ray.ang.extension.toast
 import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
+import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.util.JsonUtil
 import com.v2ray.ang.util.Utils
 
@@ -84,8 +85,8 @@ class ServerActivity : BaseActivity() {
     private val xhttpMode: Array<out String> by lazy {
         resources.getStringArray(R.array.xhttp_mode)
     }
-    private val echForceQuerys: Array<out String> by lazy {
-        resources.getStringArray(R.array.ech_force_query_value)
+    private val browserDialerModes: Array<out String> by lazy {
+        resources.getStringArray(R.array.browser_dialer_mode)
     }
 
 
@@ -132,15 +133,18 @@ class ServerActivity : BaseActivity() {
     private val et_port_hop_interval: EditText? by lazy { findViewById(R.id.et_port_hop_interval) }
     private val et_bandwidth_down: EditText? by lazy { findViewById(R.id.et_bandwidth_down) }
     private val et_bandwidth_up: EditText? by lazy { findViewById(R.id.et_bandwidth_up) }
+    private val et_kcp_mtu: EditText? by lazy { findViewById(R.id.et_kcp_mtu) }
+    private val et_kcp_tti: EditText? by lazy { findViewById(R.id.et_kcp_tti) }
+    private val layout_kcp: LinearLayout? by lazy { findViewById(R.id.layout_kcp) }
     private val et_extra: EditText? by lazy { findViewById(R.id.et_extra) }
     private val et_fm: EditText? by lazy { findViewById(R.id.et_fm) }
     private val layout_extra: LinearLayout? by lazy { findViewById(R.id.layout_extra) }
     private val et_ech_config_list: EditText? by lazy { findViewById(R.id.et_ech_config_list) }
     private val container_ech_config_list: LinearLayout? by lazy { findViewById(R.id.lay_ech_config_list) }
-    private val sp_ech_force_query: Spinner? by lazy { findViewById(R.id.sp_ech_force_query) }
-    private val container_ech_force_query: LinearLayout? by lazy { findViewById(R.id.lay_ech_force_query) }
     private val et_pinned_ca256: EditText? by lazy { findViewById(R.id.et_pinned_ca256) }
     private val container_pinned_ca256: LinearLayout? by lazy { findViewById(R.id.lay_pinned_ca256) }
+    private val layout_browser_dialer: LinearLayout? by lazy { findViewById(R.id.layout_browser_dialer) }
+    private val sp_browser_dialer_mode: Spinner? by lazy { findViewById(R.id.sp_browser_dialer_mode) }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -150,14 +154,12 @@ class ServerActivity : BaseActivity() {
 
         val layoutId = when (config?.configType ?: createConfigType) {
             EConfigType.VMESS -> R.layout.activity_server_vmess
-            EConfigType.CUSTOM -> null
             EConfigType.SHADOWSOCKS -> R.layout.activity_server_shadowsocks
             EConfigType.SOCKS, EConfigType.HTTP -> R.layout.activity_server_socks
             EConfigType.VLESS -> R.layout.activity_server_vless
             EConfigType.TROJAN -> R.layout.activity_server_trojan
             EConfigType.WIREGUARD -> R.layout.activity_server_wireguard
             EConfigType.HYSTERIA2 -> R.layout.activity_server_hysteria2
-            EConfigType.POLICYGROUP -> null
             else -> null
         } ?: return
         setContentViewWithToolbar(layoutId, showHomeAsUp = true, title = (config?.configType ?: createConfigType).toString())
@@ -245,8 +247,23 @@ class ServerActivity : BaseActivity() {
                 )
                 et_fm?.text = Utils.getEditable(config?.finalMask)
 
+                layout_kcp?.visibility =
+                    when (networks[position]) {
+                        NetworkType.KCP.type -> View.VISIBLE
+                        else -> View.GONE
+                    }
+                et_kcp_mtu?.text = Utils.getEditable(config?.kcpMtu?.toString().orEmpty())
+                et_kcp_tti?.text = Utils.getEditable(config?.kcpTti?.toString().orEmpty())
+
                 layout_extra?.visibility =
                     when (networks[position]) {
+                        NetworkType.XHTTP.type -> View.VISIBLE
+                        else -> View.GONE
+                    }
+
+                layout_browser_dialer?.visibility =
+                    when (networks[position]) {
+                        NetworkType.WS.type -> View.VISIBLE
                         NetworkType.XHTTP.type -> View.VISIBLE
                         else -> View.GONE
                     }
@@ -279,7 +296,6 @@ class ServerActivity : BaseActivity() {
                             container_spider_x,
                             container_mldsa65_verify,
                             container_ech_config_list,
-                            container_ech_force_query,
                             container_pinned_ca256
                         ).forEach { it?.visibility = View.GONE }
                     }
@@ -292,7 +308,6 @@ class ServerActivity : BaseActivity() {
                             container_alpn,
                             container_allow_insecure,
                             container_ech_config_list,
-                            container_ech_force_query,
                             container_pinned_ca256
                         ).forEach { it?.visibility = View.VISIBLE }
                         listOf(
@@ -313,7 +328,6 @@ class ServerActivity : BaseActivity() {
                             container_alpn,
                             container_allow_insecure,
                             container_ech_config_list,
-                            container_ech_force_query,
                             container_pinned_ca256
                         ).forEach { it?.visibility = View.GONE }
                         listOf(
@@ -397,10 +411,6 @@ class ServerActivity : BaseActivity() {
                     sp_allow_insecure?.setSelection(allowinsecure)
                 }
                 et_ech_config_list?.text = Utils.getEditable(config.echConfigList)
-                config.echForceQuery?.let { it ->
-                    val index = Utils.arrayFind(echForceQuerys, it)
-                    index.let { sp_ech_force_query?.setSelection(if (it >= 0) it else 0) }
-                }
                 et_pinned_ca256?.text = Utils.getEditable(config.pinnedCA256)
             } else if (config.security == REALITY) {
                 et_public_key?.text = Utils.getEditable(config.publicKey.orEmpty())
@@ -414,6 +424,12 @@ class ServerActivity : BaseActivity() {
         if (network >= 0) {
             sp_network?.setSelection(network)
         }
+
+        val browserDialerMode = Utils.arrayFind(browserDialerModes, config.browserDialerMode.orEmpty())
+        if (browserDialerMode >= 0) {
+            sp_browser_dialer_mode?.setSelection(browserDialerMode)
+        }
+
         return true
     }
 
@@ -442,6 +458,7 @@ class ServerActivity : BaseActivity() {
         et_local_address?.text =
             Utils.getEditable(WIREGUARD_LOCAL_ADDRESS_V4)
         et_local_mtu?.text = Utils.getEditable(WIREGUARD_LOCAL_MTU)
+        sp_browser_dialer_mode?.setSelection(0)
         return true
     }
 
@@ -508,8 +525,11 @@ class ServerActivity : BaseActivity() {
         if (config.subscriptionId.isEmpty() && !subscriptionId.isNullOrEmpty()) {
             config.subscriptionId = subscriptionId.orEmpty()
         }
-        //Log.i(AppConfig.TAG, JsonUtil.toJsonPretty(config) ?: "")
+        //LogUtil.i(AppConfig.TAG, JsonUtil.toJsonPretty(config) ?: "")
         MmkvManager.encodeServerConfig(editGuid, config)
+        if (isRunning) {
+            SettingsChangeManager.makeRestartService()
+        }
         toastSuccess(R.string.toast_success)
         finish()
         return true
@@ -569,6 +589,18 @@ class ServerActivity : BaseActivity() {
         profileItem.xhttpMode = transportTypes(networks[network])[type]
         profileItem.xhttpExtra = et_extra?.text?.toString()?.trim().nullIfBlank()
         profileItem.finalMask = et_fm?.text?.toString()?.trim()?.nullIfBlank()
+        profileItem.kcpMtu = et_kcp_mtu?.text?.toString()?.toIntOrNull()
+        profileItem.kcpTti = et_kcp_tti?.text?.toString()?.toIntOrNull()
+        if (networks[network] == NetworkType.WS.type || networks[network] == NetworkType.XHTTP.type) {
+            val browserDialerMode = browserDialerModes[sp_browser_dialer_mode?.selectedItemPosition ?: 0]
+            if (browserDialerMode != browserDialerModes[0]) {
+                profileItem.browserDialerMode = browserDialerMode
+            } else {
+                profileItem.browserDialerMode = null
+            }
+        } else {
+            profileItem.browserDialerMode = null
+        }
     }
 
     private fun saveTls(config: ProfileItem) {
@@ -582,7 +614,6 @@ class ServerActivity : BaseActivity() {
         val spiderX = et_spider_x?.text?.toString()
         val mldsa65Verify = et_mldsa65_verify?.text?.toString()
         val echConfigList = et_ech_config_list?.text?.toString()
-        val echForceQueryIndex = sp_ech_force_query?.selectedItemPosition ?: 0
         val pinnedCA256 = et_pinned_ca256?.text?.toString()
 
         val allowInsecure =
@@ -602,7 +633,6 @@ class ServerActivity : BaseActivity() {
         config.spiderX = spiderX
         config.mldsa65Verify = mldsa65Verify
         config.echConfigList = echConfigList
-        config.echForceQuery = echForceQuerys[echForceQueryIndex]
         config.pinnedCA256 = pinnedCA256
     }
 
@@ -659,17 +689,9 @@ class ServerActivity : BaseActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.action_server, menu)
-        val delButton = menu.findItem(R.id.del_config)
-        val saveButton = menu.findItem(R.id.save_config)
 
-        if (editGuid.isNotEmpty()) {
-            if (isRunning) {
-                delButton?.isVisible = false
-                saveButton?.isVisible = false
-            }
-        } else {
-            delButton?.isVisible = false
-        }
+        val delButton = menu.findItem(R.id.del_config)
+        delButton?.isVisible = editGuid.isNotEmpty() && !isRunning
 
         return super.onCreateOptionsMenu(menu)
     }

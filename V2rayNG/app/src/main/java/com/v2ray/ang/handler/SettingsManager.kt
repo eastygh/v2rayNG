@@ -2,8 +2,8 @@ package com.v2ray.ang.handler
 
 import android.content.Context
 import android.content.res.AssetManager
+import android.os.Build
 import android.text.TextUtils
-import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import com.google.gson.JsonObject
 import com.v2ray.ang.AppConfig
@@ -13,9 +13,9 @@ import com.v2ray.ang.AppConfig.GEOIP_PRIVATE
 import com.v2ray.ang.AppConfig.GEOSITE_PRIVATE
 import com.v2ray.ang.AppConfig.TAG_DIRECT
 import com.v2ray.ang.AppConfig.VPN
-import com.v2ray.ang.dto.ProfileItem
-import com.v2ray.ang.dto.RulesetItem
-import com.v2ray.ang.dto.SubscriptionItem
+import com.v2ray.ang.dto.entities.ProfileItem
+import com.v2ray.ang.dto.entities.RulesetItem
+import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.dto.V2rayConfig
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.Language
@@ -28,11 +28,13 @@ import com.v2ray.ang.handler.MmkvManager.decodeSubscription
 import com.v2ray.ang.handler.MmkvManager.encodeSubscription
 import com.v2ray.ang.handler.MmkvManager.removeSubscription
 import com.v2ray.ang.util.JsonUtil
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Collections
 import java.util.Locale
+import kotlin.random.Random
 
 object SettingsManager {
     @Volatile
@@ -43,6 +45,9 @@ object SettingsManager {
 
     @Volatile
     private var localSocksAuthPass: String? = null
+
+    @Volatile
+    private var runtimeSocksPort: Int? = null
 
     fun initApp(context: Context) {
         ensureDefaultSettings()
@@ -109,7 +114,7 @@ object SettingsManager {
             resetRoutingRulesetsCommon(rulesetList)
             return true
         } catch (e: Exception) {
-            Log.e(ANG_PACKAGE, "Failed to reset routing rulesets", e)
+            LogUtil.e(ANG_PACKAGE, "Failed to reset routing rulesets", e)
             return false
         }
     }
@@ -228,7 +233,7 @@ object SettingsManager {
      * @param toPosition The position to swap to.
      */
     fun swapSubscriptions(fromPosition: Int, toPosition: Int) {
-        val subsList = MmkvManager.decodeSubsList()
+        val subsList = decodeSubsList()
         if (subsList.isEmpty()) return
 
         Collections.swap(subsList, fromPosition, toPosition)
@@ -256,12 +261,7 @@ object SettingsManager {
      * it creates a new default subscription to ensure that ungroup
      **/
     fun removeSubscriptionWithDefault(subid: String) {
-//        val subsList = decodeSubsList()
-//        if (subsList.size == 1 && subsList.first() == DEFAULT_SUBSCRIPTION_ID) {
-//            Log.i(ANG_PACKAGE,"Attempted to remove the only existing default subscription, operation ignored.")
-//            return
-//        }
-
+        SubscriptionUpdater.cancelOne(subId = subid)
         // Remove the subscription
         removeSubscription(subid)
 
@@ -282,7 +282,30 @@ object SettingsManager {
      * @return The SOCKS port.
      */
     fun getSocksPort(): Int {
-        return Utils.parseInt(MmkvManager.decodeSettingsString(AppConfig.PREF_SOCKS_PORT), AppConfig.PORT_SOCKS.toInt())
+        val port =
+            if (IsDynamicSocksPort()) {
+                runtimeSocksPort ?: refreshRuntimeSocksPort()
+            } else {
+                Utils.parseInt(MmkvManager.decodeSettingsString(AppConfig.PREF_SOCKS_PORT), AppConfig.PORT_SOCKS.toInt())
+            }
+        return port ?: AppConfig.PORT_SOCKS.toInt()
+    }
+
+    @Synchronized
+    fun refreshRuntimeSocksPort(): Int? {
+        if (IsDynamicSocksPort()) {
+            runtimeSocksPort = generateRandomSocksPort()
+            return runtimeSocksPort
+        }
+        return null
+    }
+
+    fun getSocksUsername(): String? {
+        return MmkvManager.decodeSettingsString(AppConfig.PREF_SOCKS_USERNAME)?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    fun getSocksPassword(): String? {
+        return MmkvManager.decodeSettingsString(AppConfig.PREF_SOCKS_PASSWORD)?.trim()?.takeIf { it.isNotEmpty() }
     }
 
     /**
@@ -291,6 +314,14 @@ object SettingsManager {
      */
     fun getHttpPort(): Int {
         return getSocksPort() + if (Utils.isXray()) 0 else 1
+    }
+
+    private fun IsDynamicSocksPort(): Boolean {
+        return MmkvManager.decodeSettingsBool(AppConfig.PREF_DYNAMIC_SOCKS_PORT, false)
+    }
+
+    private fun generateRandomSocksPort(): Int {
+        return Random.nextInt(10000, 65535)
     }
 
     /**
@@ -502,10 +533,10 @@ object SettingsManager {
                             input.copyTo(output)
                         }
                     }
-                    Log.i(AppConfig.TAG, "Copied from apk assets folder to ${target.absolutePath}")
+                    LogUtil.i(AppConfig.TAG, "Copied from apk assets folder to ${target.absolutePath}")
                 }
         } catch (e: Exception) {
-            Log.e(ANG_PACKAGE, "asset copy failed", e)
+            LogUtil.e(ANG_PACKAGE, "asset copy failed", e)
         }
     }
 
@@ -558,6 +589,15 @@ object SettingsManager {
             MmkvManager.decodeSettingsString(AppConfig.PREF_DELAY_TEST_URL)
                 ?: AppConfig.DELAY_TEST_URL
         }
+    }
+
+    /**
+     * Get real ping concurrency.
+     * @return The number of concurrent real-ping tests (clamped to 1..64).
+     */
+    fun getRealPingConcurrency(): Int {
+        val value = MmkvManager.decodeSettingsString(AppConfig.PREF_REAL_PING_CONCURRENCY)?.toIntOrNull() ?: 16
+        return value.coerceIn(1, 128)
     }
 
     /**
@@ -632,14 +672,35 @@ object SettingsManager {
     }
 
     /**
+     *  Check if process routing can be used.
+     */
+    fun canUseProcessRouting(): Boolean {
+        // Android 10+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return false
+        }
+
+        // Must xray tun
+        if (isUsingHevTun()) {
+            return false
+        }
+
+        // Must have route only enabled
+        if (MmkvManager.decodeSettingsBool(AppConfig.PREF_ROUTE_ONLY_ENABLED, false) == false) {
+            return false
+        }
+
+        return true
+    }
+
+    /**
      * Ensure default settings are present in MMKV.
      */
     private fun ensureDefaultSettings() {
         // Write defaults in the exact order requested by the user
-        ensureDefaultValue(AppConfig.PREF_MODE, AppConfig.VPN)
+        ensureDefaultValue(AppConfig.PREF_MODE, VPN)
         ensureDefaultValue(AppConfig.PREF_VPN_DNS, AppConfig.DNS_VPN)
         ensureDefaultValue(AppConfig.PREF_VPN_MTU, AppConfig.VPN_MTU.toString())
-        ensureDefaultValue(AppConfig.SUBSCRIPTION_AUTO_UPDATE_INTERVAL, AppConfig.SUBSCRIPTION_DEFAULT_UPDATE_INTERVAL)
         ensureDefaultValue(AppConfig.PREF_SOCKS_PORT, AppConfig.PORT_SOCKS)
         ensureDefaultValue(AppConfig.PREF_REMOTE_DNS, AppConfig.DNS_PROXY)
         ensureDefaultValue(AppConfig.PREF_DOMESTIC_DNS, AppConfig.DNS_DIRECT)

@@ -48,6 +48,11 @@
 
     <PreferenceCategory android:title="@string/title_vpn_settings">
         <CheckBoxPreference
+            android:key="pref_ipv6_enabled"
+            android:summary="@string/summary_pref_ipv6_enabled"
+            android:title="@string/title_pref_ipv6_enabled" />
+
+        <CheckBoxPreference
             android:key="pref_prefer_ipv6"
             android:summary="@string/summary_pref_prefer_ipv6"
             android:title="@string/title_pref_prefer_ipv6" />
@@ -141,21 +146,49 @@
 
         <CheckBoxPreference
             android:defaultValue="false"
-            android:key="pref_proxy_sharing_enabled"
-            android:summary="@string/summary_pref_proxy_sharing_enabled"
-            android:title="@string/title_pref_proxy_sharing_enabled" />
+            android:key="pref_allow_insecure"
+            android:title="@string/title_pref_allow_insecure" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="pref_enable_local_proxy"
+            android:summary="@string/summary_pref_enable_local_proxy"
+            android:title="@string/title_pref_enable_local_proxy" />
 
         <CheckBoxPreference
             android:defaultValue="false"
-            android:key="pref_allow_insecure"
-            android:summary="@string/summary_pref_allow_insecure"
-            android:title="@string/title_pref_allow_insecure" />
+            android:key="pref_proxy_sharing_enabled"
+            android:summary="@string/summary_pref_proxy_sharing_enabled"
+            android:title="@string/title_pref_proxy_sharing_enabled" />
 
         <EditTextPreference
             android:inputType="number"
             android:key="pref_socks_port"
             android:summary="10808"
             android:title="@string/title_pref_socks_port" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pref_dynamic_socks_port"
+            android:summary="@string/summary_pref_dynamic_socks_port"
+            android:title="@string/title_pref_dynamic_socks_port" />
+
+        <EditTextPreference
+            android:key="pref_socks_username"
+            android:summary="@string/summary_pref_socks_username"
+            android:title="@string/title_pref_socks_username" />
+
+        <EditTextPreference
+            android:inputType="textPassword"
+            android:key="pref_socks_password"
+            android:summary="@string/summary_pref_socks_password"
+            android:title="@string/title_pref_socks_password" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="pref_socks_enable_udp"
+            android:summary="@string/summary_pref_socks_enable_udp"
+            android:title="@string/title_pref_socks_enable_udp" />
 
         <EditTextPreference
             android:key="pref_remote_dns"
@@ -245,19 +278,6 @@
             android:title="@string/title_pref_fragment_packets" />
     </PreferenceCategory>
 
-    <PreferenceCategory
-        android:title="@string/title_sub_setting"
-        app:initialExpandedChildrenCount="0">
-        <CheckBoxPreference
-            android:key="pref_auto_update_subscription"
-            android:summary="@string/summary_pref_auto_update_subscription"
-            android:title="@string/title_pref_auto_update_subscription" />
-        <EditTextPreference
-            android:inputType="number"
-            android:key="pref_auto_update_interval"
-            android:summary="1440"
-            android:title="@string/title_pref_auto_update_interval" />
-    </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/title_advanced">
 
@@ -282,6 +302,12 @@
             android:key="pref_delay_test_url"
             android:summary="@string/summary_pref_delay_test_url"
             android:title="@string/title_pref_delay_test_url" />
+
+        <EditTextPreference
+            android:inputType="number"
+            android:key="pref_real_ping_concurrency"
+            android:summary="16"
+            android:title="@string/title_pref_real_ping_concurrency" />
 
         <EditTextPreference
             android:key="pref_ip_api_url"

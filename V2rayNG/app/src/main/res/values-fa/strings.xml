@@ -30,6 +30,7 @@
     <string name="menu_item_import_config_clipboard">کانفیگ را از کلیپ ‌بورد وارد کنید</string>
     <string name="menu_item_import_config_local">کانفیگ را از محلی وارد کنید</string>
     <string name="menu_item_import_config_policy_group">اضافه کردن [گروه خط مشی]</string>
+    <string name="menu_item_import_config_proxy_chain">Add [Proxy chain]</string>
     <string name="menu_item_import_config_manually_vmess">تایپ دستی[VMESS]</string>
     <string name="menu_item_import_config_manually_vless">تایپ دستی[VLESS]</string>
     <string name="menu_item_import_config_manually_ss">تایپ دستی[SHADOWSOCKS]</string>
@@ -88,6 +89,8 @@
     <string name="server_lab_reserved">Reserved (اختیاری، جدا شده با کاما)</string>
     <string name="server_lab_local_address">آدرس محلی (IPv4/IPv6 اختیاری، جدا شده با کاما)</string>
     <string name="server_lab_local_mtu">MTU (اختیاری، پیش‌فرض 1420)</string>
+    <string name="server_lab_kcp_mtu">mKCP MTU (اختیاری، پیش‌فرض هسته 1350)</string>
+    <string name="server_lab_kcp_tti">mKCP TTI (اختیاری، پیش‌فرض هسته 50)</string>
     <string name="toast_success">با موفقیت انجام شد</string>
     <string name="toast_failure">شکست</string>
     <string name="toast_none_data">هیچ داده ای وجود ندارد</string>
@@ -114,7 +117,6 @@
     <string name="server_lab_xhttp_extra">خام JSON XHTTP Extra، قالب: { XHTTPObject }</string>
     <string name="server_lab_final_mask">finalMask raw JSON, format: { FinalMaskObject }</string>
     <string name="server_lab_ech_config_list">لیست کانفیگ Ech</string>
-    <string name="server_lab_ech_force_query">EchForceQuery</string>
     <string name="server_lab_pinned_ca256">Certificate fingerprint (SHA-256)</string>
 
     <!-- UserAssetActivity -->
@@ -184,8 +186,11 @@
     <string name="title_pref_fake_dns_enabled">فعال کردن DNS جعلی</string>
     <string name="summary_pref_fake_dns_enabled">دی ان اس محلی آدرس های آیپی جعلی را بر می گرداند (سریع تر می باشد و تاخیر را کاهش می دهد اما ممکن است برای برخی از برنامه ها کار نکند)</string>
 
+    <string name="title_pref_ipv6_enabled">فعال کردن IPv6</string>
+    <string name="summary_pref_ipv6_enabled">آدرس و مسیرهای IPv6 را به رابط VPN اضافه کنید</string>
+
     <string name="title_pref_prefer_ipv6">ترجیح دادن IPV6</string>
-    <string name="summary_pref_prefer_ipv6">مسیرهای IPv6 را فعال کنید و آدرس‌های IPv6 را ترجیح دهید</string>
+    <string name="summary_pref_prefer_ipv6">هنگام بازیابی نام دامنه، آدرس‌های IPv6 را ترجیح دهید</string>
 
     <string name="title_pref_remote_dns">DNS از راه دور (اختیاری) (udp/tcp/https/quic)</string>
     <string name="summary_pref_remote_dns">DNS</string>
@@ -204,6 +209,7 @@
 
     <string name="title_pref_delay_test_url">آدرس اینترنتی آزمایش تاخیر واقعی کانفیگ ها </string>
     <string name="summary_pref_delay_test_url">URL</string>
+    <string name="title_pref_real_ping_concurrency">تعداد همزمانی تست تأخیر واقعی</string>
 
     <string name="title_pref_ip_api_url">تست اطلاعات اتصال فعلی url</string>
     <string name="summary_pref_ip_api_url">Url</string>
@@ -216,7 +222,17 @@
     <string name="summary_pref_allow_insecure">هنگام استفاده از TLS، به طور پیش‌ فرض مجوز ناامن فعال است.</string>
 
     <string name="title_pref_socks_port">پورت پروکسی محلی</string>
+    <string name="title_pref_enable_local_proxy">فعال‌سازی پروکسی محلی</string>
+    <string name="summary_pref_enable_local_proxy">When disabled, no SOCKS proxy is available, so subscription updates and similar actions cannot use the proxy</string>
+    <string name="title_pref_socks_enable_udp">SOCKS5 UDP</string>
+    <string name="summary_pref_socks_enable_udp">احراز هویت socks5 هنگام استفاده از UDP کاملاً ایمن نیست</string>
     <string name="summary_pref_socks_port">پورت پروکسی محلی</string>
+    <string name="title_pref_dynamic_socks_port">Enable dynamic local proxy port</string>
+    <string name="summary_pref_dynamic_socks_port">Generate a random local proxy port each time the inbound is created</string>
+    <string name="title_pref_socks_username">Local proxy username (optional)</string>
+    <string name="summary_pref_socks_username">Username</string>
+    <string name="title_pref_socks_password">Local proxy password (optional)</string>
+    <string name="summary_pref_socks_password">Password</string>
 
     <string name="title_pref_local_dns_port">پورت DNS محلی</string>
     <string name="summary_pref_local_dns_port">پورت DNS محلی</string>
@@ -242,6 +258,7 @@
     <string name="toast_tg_app_not_found">برنامه تلگرام پیدا نشد</string>
 
     <string name="title_privacy_policy">حریم خصوصی</string>
+    <string name="title_qr_code">QR code</string>
     <string name="title_about">درباره</string>
     <string name="title_source_code">کد منبع</string>
     <string name="title_oss_license">مجوز های منبع باز</string>
@@ -282,6 +299,7 @@
     <string name="sub_setting_pre_profile">نام مستعار پروکسی قبلی</string>
     <string name="sub_setting_next_profile">نام مستعار پروکسی بعدی</string>
     <string name="sub_setting_pre_profile_tip">لطفاً مطمئن شوید که نام مستعار وجود دارد و منحصر به فرد است</string>
+    <string name="toast_invalid_update_interval">بازه بروزرسانی نامعتبر است. حداقل مقدار 15 دقیقه است.</string>
     <string name="title_sub_update">به‌روزرسانی گروه فعلی اشتراک</string>
     <string name="title_ping_all_server">TCPING کانفیگ های گروه فعلی</string>
     <string name="title_real_ping_all_server">تاخیر واقعی کانفیگ های گروه فعلی</string>
@@ -307,7 +325,7 @@
     <!-- RoutingSettingActivity -->
     <string name="routing_settings_domain_strategy">استراتژی دامنه</string>
     <string name="routing_settings_title">تنظیمات مسیریابی</string>
-    <string name="routing_settings_tips">با کاما (،) از هم جدا شوند، ذخیره کردن فراموش نشود</string>
+    <string name="routing_settings_tips">با کاما (,) جدا کنید. یکی از موارد domain، ip یا process را وارد کنید</string>
     <string name="routing_settings_save">ذخیره</string>
     <string name="routing_settings_delete">حذف</string>
     <string name="routing_settings_rule_title">تنظیمات قانون مسیریابی</string>
@@ -356,6 +374,12 @@
     <string name="title_policy_group_type">نوع گروه خط مشی</string>
     <string name="title_policy_group_subscription_id">از گروه اشتراک</string>
     <string name="title_policy_group_subscription_filter">توضیحات فیلتر معمولی</string>
+    <string name="server_proxy_chain_members">اعضای زنجیره پروکسی</string>
+    <string name="server_proxy_chain_pick_members">برای انتخاب عضو اینجا بزنید</string>
+    <string name="server_proxy_chain_member_unselected">یک عضو را انتخاب کنید</string>
+    <string name="server_proxy_chain_members_unselected">لطفا برای هر ردیف زنجیره remark انتخاب کنید</string>
+    <string name="server_proxy_chain_members_insufficient">تعداد اعضا کافی نیست</string>
+    <string name="server_proxy_chain_members_invalid">اعضای نامعتبر زنجیره: %1$s</string>
 
     <!-- BackupActivity -->
     <string name="title_configuration_backup_restore">پشتیبان‌گیری و بازیابی</string>

@@ -1,18 +1,16 @@
 package com.v2ray.ang.fmt
 
 import android.text.TextUtils
-import android.util.Log
 import com.v2ray.ang.AppConfig
-import com.v2ray.ang.dto.ProfileItem
-import com.v2ray.ang.dto.V2rayConfig.OutboundBean
+import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.VmessQRCode
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.NetworkType
 import com.v2ray.ang.extension.idnHost
 import com.v2ray.ang.extension.nullIfBlank
 import com.v2ray.ang.handler.MmkvManager
-import com.v2ray.ang.handler.V2rayConfigManager
 import com.v2ray.ang.util.JsonUtil
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import java.net.URI
 
@@ -34,7 +32,7 @@ object VmessFmt : FmtBase() {
         var result = str.replace(EConfigType.VMESS.protocolScheme, "")
         result = Utils.decode(result)
         if (TextUtils.isEmpty(result)) {
-            Log.w(AppConfig.TAG, "Toast decoding failed")
+            LogUtil.w(AppConfig.TAG, "Toast decoding failed")
             return null
         }
         val vmessQRCode = JsonUtil.fromJson(result, VmessQRCode::class.java) ?: return null
@@ -44,7 +42,7 @@ object VmessFmt : FmtBase() {
             || TextUtils.isEmpty(vmessQRCode.id)
             || TextUtils.isEmpty(vmessQRCode.net)
         ) {
-            Log.w(AppConfig.TAG, "Toast incorrect protocol")
+            LogUtil.w(AppConfig.TAG, "Toast incorrect protocol")
             return null
         }
 
@@ -174,31 +172,5 @@ object VmessFmt : FmtBase() {
         return config
     }
 
-    /**
-     * Converts a ProfileItem object to an OutboundBean object.
-     *
-     * @param profileItem the ProfileItem object to convert
-     * @return the converted OutboundBean object, or null if conversion fails
-     */
-    fun toOutbound(profileItem: ProfileItem): OutboundBean? {
-        val outboundBean = V2rayConfigManager.createInitOutbound(EConfigType.VMESS)
-
-        outboundBean?.settings?.vnext?.first()?.let { vnext ->
-            vnext.address = getServerAddress(profileItem)
-            vnext.port = profileItem.serverPort.orEmpty().toInt()
-            vnext.users[0].id = profileItem.password.orEmpty()
-            vnext.users[0].security = profileItem.method
-        }
-
-        val sni = outboundBean?.streamSettings?.let {
-            V2rayConfigManager.populateTransportSettings(it, profileItem)
-        }
-
-        outboundBean?.streamSettings?.let {
-            V2rayConfigManager.populateTlsSettings(it, profileItem, sni)
-        }
-
-        return outboundBean
-    }
 
 }

@@ -1,8 +1,8 @@
-package com.v2ray.ang.handler
+package com.v2ray.ang.core
 
 import android.content.Context
-import android.util.Log
 import com.v2ray.ang.AppConfig
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import go.Seq
 import libv2ray.CoreCallbackHandler
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Thread-safe singleton wrapper for Libv2ray native methods.
  * Provides initialization protection and unified API for V2Ray core operations.
  */
-object V2RayNativeManager {
+object CoreNativeManager {
     private val initialized = AtomicBoolean(false)
 
     /**
@@ -32,14 +32,23 @@ object V2RayNativeManager {
                 val assetPath = Utils.userAssetPath(context)
                 val deviceId = Utils.getDeviceIdForXUDPBaseKey()
                 Libv2ray.initCoreEnv(assetPath, deviceId)
-                Log.i(AppConfig.TAG, "V2Ray core environment initialized successfully")
+                LogUtil.i(AppConfig.TAG, "V2Ray core environment initialized successfully")
             } catch (e: Exception) {
-                Log.e(AppConfig.TAG, "Failed to initialize V2Ray core environment", e)
+                LogUtil.e(AppConfig.TAG, "Failed to initialize V2Ray core environment", e)
                 initialized.set(false)
                 throw e
             }
         } else {
-            Log.d(AppConfig.TAG, "V2Ray core environment already initialized, skipping")
+            LogUtil.d(AppConfig.TAG, "V2Ray core environment already initialized, skipping")
+        }
+    }
+
+    fun reconcileBrowserDialer(dialerAddr: String) {
+        try {
+            Libv2ray.reconcileBrowserDialer(dialerAddr)
+            LogUtil.i(AppConfig.TAG, "Browser dialer reconciled successfully with address: $dialerAddr")
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "Failed to reconcile browser dialer with address: $dialerAddr", e)
         }
     }
 
@@ -53,7 +62,7 @@ object V2RayNativeManager {
         return try {
             Libv2ray.checkVersionX()
         } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to check V2Ray version", e)
+            LogUtil.e(AppConfig.TAG, "Failed to check V2Ray version", e)
             "Unknown"
         }
     }
@@ -69,7 +78,7 @@ object V2RayNativeManager {
         return try {
             Libv2ray.measureOutboundDelay(config, testUrl)
         } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to measure outbound delay", e)
+            LogUtil.e(AppConfig.TAG, "Failed to measure outbound delay", e)
             -1L
         }
     }
@@ -84,7 +93,7 @@ object V2RayNativeManager {
         return try {
             Libv2ray.newCoreController(handler)
         } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to create core controller", e)
+            LogUtil.e(AppConfig.TAG, "Failed to create core controller", e)
             throw e
         }
     }

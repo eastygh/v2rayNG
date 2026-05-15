@@ -4,22 +4,22 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import android.util.Log
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.contracts.ServiceControl
+import com.v2ray.ang.core.CoreServiceManager
 import com.v2ray.ang.handler.SettingsManager
-import com.v2ray.ang.handler.V2RayServiceManager
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.MyContextWrapper
 import java.lang.ref.SoftReference
 
-class V2RayProxyOnlyService : Service(), ServiceControl {
+class CoreProxyOnlyService : Service(), ServiceControl {
     /**
      * Initializes the service.
      */
     override fun onCreate() {
         super.onCreate()
-        Log.i(AppConfig.TAG, "StartCore-Proxy: Service created")
-        V2RayServiceManager.serviceControl = SoftReference(this)
+        LogUtil.i(AppConfig.TAG, "StartCore-Proxy: Service created")
+        CoreServiceManager.serviceControl = SoftReference(this)
     }
 
     /**
@@ -30,8 +30,8 @@ class V2RayProxyOnlyService : Service(), ServiceControl {
      * @return The start mode.
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.i(AppConfig.TAG, "StartCore-Proxy: Service command received")
-        V2RayServiceManager.startCoreLoop(null)
+        LogUtil.i(AppConfig.TAG, "StartCore-Proxy: Service command received")
+        CoreServiceManager.startCoreLoop(null)
         return START_STICKY
     }
 
@@ -40,7 +40,7 @@ class V2RayProxyOnlyService : Service(), ServiceControl {
      */
     override fun onDestroy() {
         super.onDestroy()
-        V2RayServiceManager.stopCoreLoop()
+        CoreServiceManager.stopCoreLoop()
     }
 
     /**

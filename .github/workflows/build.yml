@@ -22,7 +22,7 @@ jobs:
         fetch-depth: '0'
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v4.0.0
+      uses: android-actions/setup-android@v4.0.1
       with:
         log-accepted-android-sdk-licenses: false
         cmdline-tools-version: '13114758'
@@ -70,7 +70,7 @@ jobs:
         popd
 
     - name: Download libv2ray
-      uses: robinraju/release-downloader@v1.12
+      uses: robinraju/release-downloader@v1.13
       with:
         repository: '2dust/AndroidLibXrayLite'
         tag: ${{ env.CURRENT_TAG }}
@@ -84,7 +84,7 @@ jobs:
         java-version: '21'
 
     - name: Decode Keystore
-      uses: timheuer/base64-to-file@v1.2.4
+      uses: timheuer/base64-to-file@v2.0.0
       id: android_keystore
       with:
         fileName: "android_keystore.jks"

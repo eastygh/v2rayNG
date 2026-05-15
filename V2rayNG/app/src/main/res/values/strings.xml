@@ -31,6 +31,7 @@
     <string name="menu_item_import_config_clipboard">Import from Clipboard</string>
     <string name="menu_item_import_config_local">Import from locally</string>
     <string name="menu_item_import_config_policy_group">Add [Policy group]</string>
+    <string name="menu_item_import_config_proxy_chain">Add [Proxy chain]</string>
     <string name="menu_item_import_config_manually_vmess">Add [VMess]</string>
     <string name="menu_item_import_config_manually_vless">Add [VLESS]</string>
     <string name="menu_item_import_config_manually_ss">Add [Shadowsocks]</string>
@@ -68,7 +69,7 @@
     <string name="server_lab_path_kcp">kcp seed</string>
     <string name="server_lab_path_grpc">gRPC serviceName</string>
     <string name="server_lab_stream_security">TLS</string>
-    <string name="server_lab_stream_fingerprint" translatable="false">Fingerprint</string>
+    <string name="server_lab_stream_fingerprint">Fingerprint</string>
     <string name="server_lab_stream_alpn">Alpn</string>
     <string name="server_lab_allow_insecure">allowInsecure</string>
     <string name="server_lab_sni">SNI</string>
@@ -89,6 +90,8 @@
     <string name="server_lab_reserved">Reserved(Optional, separated by commas)</string>
     <string name="server_lab_local_address">Local address (optional IPv4/IPv6, separated by commas)</string>
     <string name="server_lab_local_mtu">Mtu(optional, default 1420)</string>
+    <string name="server_lab_kcp_mtu">mKCP MTU (Optional, core default 1350)</string>
+    <string name="server_lab_kcp_tti">mKCP TTI (Optional, core default 50)</string>
     <string name="toast_success">Success</string>
     <string name="toast_failure">Failure</string>
     <string name="toast_none_data">There is nothing</string>
@@ -115,8 +118,9 @@
     <string name="server_lab_xhttp_extra">XHTTP Extra raw JSON, format: { XHTTPObject }</string>
     <string name="server_lab_final_mask">finalMask raw JSON, format: { FinalMaskObject }</string>
     <string name="server_lab_ech_config_list">EchConfigList</string>
-    <string name="server_lab_ech_force_query">EchForceQuery</string>
     <string name="server_lab_pinned_ca256">Certificate fingerprint (SHA-256)</string>
+    <string name="server_lab_browser_dialer">Enable Browser Dialer</string>
+    <string name="server_lab_browser_dialer_tip">Only supports xhttp (packet-up) and ws outbound; TLS-related settings may be ignored or conflict</string>
 
     <!-- UserAssetActivity -->
     <string name="toast_asset_copy_failed">File copy failed, please use File Manager</string>
@@ -144,6 +148,7 @@
     <string name="menu_item_import_proxy_app">Import from Clipboard</string>
     <string name="per_app_proxy_settings">Per-app settings</string>
     <string name="per_app_proxy_settings_enable">Enable per-app</string>
+    <string name="app_picker_unknown_app">Unknown app (unidentified UID)</string>
 
     <!-- Preferences -->
     <string name="title_settings">Settings</string>
@@ -187,8 +192,11 @@
     <string name="title_pref_fake_dns_enabled">Enable fake DNS</string>
     <string name="summary_pref_fake_dns_enabled">Local DNS returns fake IP addresses (faster, but it may not work for some apps)</string>
 
+    <string name="title_pref_ipv6_enabled">Enable IPv6</string>
+    <string name="summary_pref_ipv6_enabled">Add IPv6 address and routes to the VPN interface</string>
+
     <string name="title_pref_prefer_ipv6">Prefer IPv6</string>
-    <string name="summary_pref_prefer_ipv6">Enable IPv6 routes and Prefer IPv6 addresses</string>
+    <string name="summary_pref_prefer_ipv6">Prefer IPv6 addresses when resolving domain names</string>
 
     <string name="title_pref_remote_dns">Remote DNS (udp/tcp/https/quic)(Optional)</string>
     <string name="summary_pref_remote_dns">DNS</string>
@@ -209,6 +217,7 @@
 
     <string name="title_pref_delay_test_url">True delay test url </string>
     <string name="summary_pref_delay_test_url">Url</string>
+    <string name="title_pref_real_ping_concurrency">True delay test concurrency</string>
 
     <string name="title_pref_ip_api_url">Current connection info test url</string>
     <string name="summary_pref_ip_api_url">Url</string>
@@ -221,7 +230,17 @@
     <string name="summary_pref_allow_insecure">When TLS is selected, allow insecure connections by default</string>
 
     <string name="title_pref_socks_port">Local proxy port</string>
+    <string name="title_pref_enable_local_proxy">Enable local proxy</string>
+    <string name="summary_pref_enable_local_proxy">When disabled, no SOCKS proxy is available, so subscription updates and similar actions cannot use the proxy</string>
+    <string name="title_pref_socks_enable_udp">SOCKS5 UDP</string>
+    <string name="summary_pref_socks_enable_udp">SOCKS5 authentication is not fully secure when using UDP.</string>
     <string name="summary_pref_socks_port">Local proxy port</string>
+    <string name="title_pref_dynamic_socks_port">Enable dynamic local proxy port</string>
+    <string name="summary_pref_dynamic_socks_port">Generate a random local proxy port each time the inbound is created</string>
+    <string name="title_pref_socks_username">Local proxy username (optional)</string>
+    <string name="summary_pref_socks_username">Username</string>
+    <string name="title_pref_socks_password">Local proxy password (optional)</string>
+    <string name="summary_pref_socks_password">Password</string>
 
     <string name="title_pref_local_dns_port">Local DNS port</string>
     <string name="summary_pref_local_dns_port">Local DNS port</string>
@@ -290,6 +309,7 @@
     <string name="sub_setting_pre_profile">Previous proxy config remarks</string>
     <string name="sub_setting_next_profile">Next proxy config remarks</string>
     <string name="sub_setting_pre_profile_tip">The config remarks exist and are unique</string>
+    <string name="toast_invalid_update_interval">Invalid update interval. Minimum is 15 minutes.</string>
     <string name="title_sub_update">Update subscription</string>
     <string name="title_ping_all_server">Tcping config</string>
     <string name="title_real_ping_all_server">Real delay config</string>
@@ -314,7 +334,7 @@
     <!-- RoutingSettingActivity -->
     <string name="routing_settings_domain_strategy">Domain strategy</string>
     <string name="routing_settings_title">Routing Settings</string>
-    <string name="routing_settings_tips">Separated by commas(,), choose domain or ip</string>
+    <string name="routing_settings_tips">Separated by commas(,), \nchoose domain or ip or process</string>
     <string name="routing_settings_save">Save</string>
     <string name="routing_settings_delete">Clear</string>
     <string name="routing_settings_rule_title">Routing Rule Settings</string>
@@ -325,14 +345,16 @@
     <string name="routing_settings_import_rulesets_from_qrcode">Import ruleset from QRcode</string>
     <string name="routing_settings_export_rulesets_to_clipboard">Export ruleset to clipboard</string>
     <string name="routing_settings_locked">Locked, keep this rule when import presets</string>
-    <string name="routing_settings_domain" translatable="false">domain</string>
-    <string name="routing_settings_ip" translatable="false">ip</string>
-    <string name="routing_settings_port" translatable="false">port</string>
-    <string name="routing_settings_protocol" translatable="false">protocol</string>
-    <string name="routing_settings_protocol_tip" translatable="false">[http,tls,bittorrent]</string>
-    <string name="routing_settings_network" translatable="false">network</string>
-    <string name="routing_settings_network_tip" translatable="false">[udp|tcp]</string>
-    <string name="routing_settings_outbound_tag" translatable="false">outboundTag</string>
+    <string name="routing_settings_domain">domain</string>
+    <string name="routing_settings_ip">ip</string>
+    <string name="routing_settings_process">process (Package Name — only supported when using Xray TUN, routeOnly enabled, and Android 10+)</string>
+    <string name="routing_settings_port">port</string>
+    <string name="routing_settings_protocol">protocol</string>
+    <string name="routing_settings_protocol_tip">[http,tls,bittorrent]</string>
+    <string name="routing_settings_network">network</string>
+    <string name="routing_settings_network_tip">[udp|tcp]</string>
+    <string name="routing_settings_outbound_tag_hint" translatable="false">proxy / direct / block / &lt;remarks&gt;</string>
+    <string name="routing_settings_outbound_tag">outboundTag</string>
 
     <string name="connection_test_pending">Check Connectivity</string>
     <string name="connection_test_testing">Testing…</string>
@@ -363,6 +385,13 @@
     <string name="title_policy_group_type">Policy group type</string>
     <string name="title_policy_group_subscription_id">From subscription group</string>
     <string name="title_policy_group_subscription_filter">Remarks regular filter</string>
+
+    <string name="server_proxy_chain_members">Proxy chain members</string>
+    <string name="server_proxy_chain_pick_members">Tap here to pick member</string>
+    <string name="server_proxy_chain_member_unselected">Select a member</string>
+    <string name="server_proxy_chain_members_unselected">Please select member for each chain row</string>
+    <string name="server_proxy_chain_members_insufficient">Insufficient members</string>
+    <string name="server_proxy_chain_members_invalid">Invalid chain members: %1$s</string>
 
     <!-- BackupActivity -->
     <string name="title_configuration_backup_restore">Backup &amp; Restore</string>
@@ -398,6 +427,12 @@
     <string-array name="mode_entries">
         <item>VPN</item>
         <item>Proxy only</item>
+    </string-array>
+
+    <string-array name="browser_dialer_mode">
+        <item>Disable</item>
+        <item>OkHttp</item>
+        <item>WebView</item>
     </string-array>
 
     <string-array name="ui_mode_night">

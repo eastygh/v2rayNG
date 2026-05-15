@@ -1,12 +1,12 @@
 package com.v2ray.ang.ui
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.R
+import com.v2ray.ang.core.CoreNativeManager
 import com.v2ray.ang.databinding.ActivityCheckUpdateBinding
 import com.v2ray.ang.dto.CheckUpdateResult
 import com.v2ray.ang.extension.toast
@@ -14,7 +14,7 @@ import com.v2ray.ang.extension.toastError
 import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.UpdateCheckerManager
-import com.v2ray.ang.handler.V2RayNativeManager
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import kotlinx.coroutines.launch
 
@@ -36,7 +36,7 @@ class CheckUpdateActivity : BaseActivity() {
         }
         binding.checkPreRelease.isChecked = MmkvManager.decodeSettingsBool(AppConfig.PREF_CHECK_UPDATE_PRE_RELEASE, false)
 
-        "v${BuildConfig.VERSION_NAME} (${V2RayNativeManager.getLibVersion()})".also {
+        "v${BuildConfig.VERSION_NAME} (${CoreNativeManager.getLibVersion()})".also {
             binding.tvVersion.text = it
         }
 
@@ -56,10 +56,9 @@ class CheckUpdateActivity : BaseActivity() {
                     toastSuccess(R.string.update_already_latest_version)
                 }
             } catch (e: Exception) {
-                Log.e(AppConfig.TAG, "Failed to check for updates: ${e.message}")
+                LogUtil.e(AppConfig.TAG, "Failed to check for updates: ${e.message}")
                 toastError(e.message ?: getString(R.string.toast_failure))
-            }
-            finally {
+            } finally {
                 hideLoading()
             }
         }

@@ -1,10 +1,6 @@
-package com.v2ray.ang.dto
+package com.v2ray.ang.dto.entities
 
-import com.v2ray.ang.AppConfig.LOOPBACK
-import com.v2ray.ang.AppConfig.PORT_SOCKS
-import com.v2ray.ang.AppConfig.TAG_BLOCKED
-import com.v2ray.ang.AppConfig.TAG_DIRECT
-import com.v2ray.ang.AppConfig.TAG_PROXY
+import com.v2ray.ang.AppConfig
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.util.Utils
 
@@ -29,6 +25,9 @@ data class ProfileItem(
     var host: String? = null,
     var path: String? = null,
     var seed: String? = null,
+    var kcpMtu: Int? = null,
+    var kcpTti: Int? = null,
+
     var quicSecurity: String? = null,
     var quicKey: String? = null,
     var mode: String? = null,
@@ -43,7 +42,6 @@ data class ProfileItem(
     var fingerPrint: String? = null,
     var insecure: Boolean? = null,
     var echConfigList: String? = null,
-    var echForceQuery: String? = null,
     var pinnedCA256: String? = null,
 
     var publicKey: String? = null,
@@ -67,6 +65,9 @@ data class ProfileItem(
     var policyGroupType: String? = null,
     var policyGroupSubscriptionId: String? = null,
     var policyGroupFilter: String? = null,
+    var proxyChainProfiles: String? = null,
+
+    var browserDialerMode: String? = null,
 
     ) {
     companion object {
@@ -76,12 +77,12 @@ data class ProfileItem(
     }
 
     fun getAllOutboundTags(): MutableList<String> {
-        return mutableListOf(TAG_PROXY, TAG_DIRECT, TAG_BLOCKED)
+        return mutableListOf(AppConfig.TAG_PROXY, AppConfig.TAG_DIRECT, AppConfig.TAG_BLOCKED)
     }
 
     fun getServerAddressAndPort(): String {
         if (server.isNullOrEmpty() && configType == EConfigType.CUSTOM) {
-            return "$LOOPBACK:$PORT_SOCKS"
+            return "${AppConfig.LOOPBACK}:${AppConfig.PORT_SOCKS}"
         }
         return Utils.getIpv6Address(server) + ":" + serverPort
     }
@@ -102,6 +103,8 @@ data class ProfileItem(
                 && this.host == obj.host
                 && this.path == obj.path
                 && this.seed == obj.seed
+                && this.kcpMtu == obj.kcpMtu
+                && this.kcpTti == obj.kcpTti
                 && this.quicSecurity == obj.quicSecurity
                 && this.quicKey == obj.quicKey
                 && this.mode == obj.mode
@@ -125,6 +128,7 @@ data class ProfileItem(
                 && this.portHopping == obj.portHopping
                 && this.portHoppingInterval == obj.portHoppingInterval
                 && this.pinnedCA256 == obj.pinnedCA256
+                && this.proxyChainProfiles == obj.proxyChainProfiles
                 )
     }
 }

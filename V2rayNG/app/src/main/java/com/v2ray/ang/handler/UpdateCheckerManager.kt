@@ -1,19 +1,17 @@
 package com.v2ray.ang.handler
 
-import android.content.Context
 import android.os.Build
-import android.util.Log
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.dto.CheckUpdateResult
 import com.v2ray.ang.dto.GitHubRelease
+import com.v2ray.ang.dto.UrlContentRequest
 import com.v2ray.ang.extension.concatUrl
 import com.v2ray.ang.util.HttpUtil
 import com.v2ray.ang.util.JsonUtil
+import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
 
 object UpdateCheckerManager {
     suspend fun checkForUpdate(includePreRelease: Boolean = false): CheckUpdateResult = withContext(Dispatchers.IO) {
@@ -23,10 +21,26 @@ object UpdateCheckerManager {
             AppConfig.APP_API_URL.concatUrl("latest")
         }
 
-        var response = HttpUtil.getUrlContent(url, 5000)
+        val proxyUsername = SettingsManager.getSocksUsername()
+        val proxyPassword = SettingsManager.getSocksPassword()
+
+        var response = HttpUtil.getUrlContent(
+            UrlContentRequest(
+                url = url,
+                timeout = 5000
+            )
+        )
         if (response.isNullOrEmpty()) {
             val httpPort = SettingsManager.getHttpPort()
-            response = HttpUtil.getUrlContent(url, 5000, httpPort)
+            response = HttpUtil.getUrlContent(
+                UrlContentRequest(
+                    url = url,
+                    timeout = 5000,
+                    httpPort = httpPort,
+                    proxyUsername = proxyUsername,
+                    proxyPassword = proxyPassword
+                )
+            )
                 ?: throw IllegalStateException("Failed to get response")
         }
 
@@ -42,7 +56,7 @@ object UpdateCheckerManager {
         }
 
         val latestVersion = latestRelease.tagName.removePrefix("v")
-        Log.i(
+        LogUtil.i(
             AppConfig.TAG,
             "Found new version: $latestVersion (current: ${BuildConfig.VERSION_NAME})"
         )
@@ -58,39 +72,6 @@ object UpdateCheckerManager {
             )
         } else {
             CheckUpdateResult(hasUpdate = false)
-        }
-    }
-
-    suspend fun downloadApk(context: Context, downloadUrl: String): File? = withContext(Dispatchers.IO) {
-        try {
-            val httpPort = SettingsManager.getHttpPort()
-            val connection = HttpUtil.createProxyConnection(downloadUrl, httpPort, 10000, 10000, true)
-                ?: throw IllegalStateException("Failed to create connection")
-
-            try {
-                val apkFile = File(context.cacheDir, "update.apk")
-                Log.i(AppConfig.TAG, "Downloading APK to: ${apkFile.absolutePath}")
-
-                FileOutputStream(apkFile).use { outputStream ->
-                    connection.inputStream.use { inputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-                Log.i(AppConfig.TAG, "APK download completed")
-                return@withContext apkFile
-            } catch (e: Exception) {
-                Log.e(AppConfig.TAG, "Failed to download APK: ${e.message}")
-                return@withContext null
-            } finally {
-                try {
-                    connection.disconnect()
-                } catch (e: Exception) {
-                    Log.e(AppConfig.TAG, "Error closing connection: ${e.message}")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to initiate download: ${e.message}")
-            return@withContext null
         }
     }
 

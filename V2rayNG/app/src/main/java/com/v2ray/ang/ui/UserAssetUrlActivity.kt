@@ -2,17 +2,17 @@ package com.v2ray.ang.ui
 
 import android.os.Bundle
 import android.text.TextUtils
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AlertDialog
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.databinding.ActivityUserAssetUrlBinding
-import com.v2ray.ang.dto.AssetUrlItem
+import com.v2ray.ang.dto.entities.AssetUrlItem
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.MmkvManager
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import java.io.File
 
@@ -80,7 +80,7 @@ class UserAssetUrlActivity : BaseActivity() {
                 try {
                     file.delete()
                 } catch (e: Exception) {
-                    Log.e(AppConfig.TAG, "Failed to delete asset file: ${file.path}", e)
+                    LogUtil.e(AppConfig.TAG, "Failed to delete asset file: ${file.path}", e)
                 }
             }
         } else {

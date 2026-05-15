@@ -9,14 +9,15 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
-import com.v2ray.ang.dto.ProfileItem
+import com.v2ray.ang.core.CoreServiceManager
+import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.extension.toSpeedString
 import com.v2ray.ang.ui.MainActivity
+import com.v2ray.ang.util.LogUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,7 +45,7 @@ object NotificationManager {
      */
     fun startSpeedNotification(currentConfig: ProfileItem?) {
         if (MmkvManager.decodeSettingsBool(AppConfig.PREF_SPEED_ENABLED) != true) return
-        if (speedNotificationJob != null || V2RayServiceManager.isRunning() == false) return
+        if (speedNotificationJob != null || CoreServiceManager.isRunning() == false) return
 
         var lastZeroSpeed = false
         val outboundTags = currentConfig?.getAllOutboundTags()
@@ -57,7 +58,7 @@ object NotificationManager {
 
                 // If the query interval is too short, skip this round to avoid excessive CPU usage
                 if (sinceLastQueryIn < QUERY_INTERVAL_MS) {
-                    Log.w(AppConfig.TAG, "Query interval too short: ${sinceLastQueryIn}ms, skipping")
+                    LogUtil.w(AppConfig.TAG, "Query interval too short: ${sinceLastQueryIn}ms, skipping")
                     lastQueryTime = queryTime
                     delay(QUERY_INTERVAL_MS)
                     continue
@@ -67,15 +68,15 @@ object NotificationManager {
                 var proxyTotal = 0L
                 val text = StringBuilder()
                 outboundTags?.forEach {
-                    val up = V2RayServiceManager.queryStats(it, AppConfig.UPLINK)
-                    val down = V2RayServiceManager.queryStats(it, AppConfig.DOWNLINK)
+                    val up = CoreServiceManager.queryStats(it, AppConfig.UPLINK)
+                    val down = CoreServiceManager.queryStats(it, AppConfig.DOWNLINK)
                     if (up + down > 0) {
                         appendSpeedString(text, it, up / sinceLastQueryInSeconds, down / sinceLastQueryInSeconds)
                         proxyTotal += up + down
                     }
                 }
-                val directUplink = V2RayServiceManager.queryStats(AppConfig.TAG_DIRECT, AppConfig.UPLINK)
-                val directDownlink = V2RayServiceManager.queryStats(AppConfig.TAG_DIRECT, AppConfig.DOWNLINK)
+                val directUplink = CoreServiceManager.queryStats(AppConfig.TAG_DIRECT, AppConfig.UPLINK)
+                val directDownlink = CoreServiceManager.queryStats(AppConfig.TAG_DIRECT, AppConfig.DOWNLINK)
                 val zeroSpeed = proxyTotal == 0L && directUplink == 0L && directDownlink == 0L
                 if (!zeroSpeed || !lastZeroSpeed) {
                     if (proxyTotal == 0L) {
@@ -251,6 +252,6 @@ object NotificationManager {
      * @return The service instance.
      */
     private fun getService(): Service? {
-        return V2RayServiceManager.serviceControl?.get()?.getService()
+        return CoreServiceManager.serviceControl?.get()?.getService()
     }
 }

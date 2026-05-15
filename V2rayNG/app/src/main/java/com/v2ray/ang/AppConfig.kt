@@ -10,8 +10,8 @@ object AppConfig {
     /** Directory names used in the app's file system. */
     const val DIR_ASSETS = "assets"
 
-    const val  WEBDAV_BACKUP_DIR = "backups"
-    const val  WEBDAV_BACKUP_FILE_NAME = "backup_ng.zip"
+    const val WEBDAV_BACKUP_DIR = "backups"
+    const val WEBDAV_BACKUP_FILE_NAME = "backup_ng.zip"
 
     /** Legacy configuration keys. */
     const val ANG_CONFIG = "ang_config"
@@ -43,10 +43,8 @@ object AppConfig {
     const val PREF_FRAGMENT_PACKETS = "pref_fragment_packets"
     const val PREF_FRAGMENT_LENGTH = "pref_fragment_length"
     const val PREF_FRAGMENT_INTERVAL = "pref_fragment_interval"
-    const val SUBSCRIPTION_AUTO_UPDATE = "pref_auto_update_subscription"
-    const val SUBSCRIPTION_AUTO_UPDATE_INTERVAL = "pref_auto_update_interval"
-    const val SUBSCRIPTION_DEFAULT_UPDATE_INTERVAL = "1440" // Default is 24 hours
     const val SUBSCRIPTION_UPDATE_TASK_NAME = "subscription_updater"
+    const val SUBSCRIPTION_MIN_INTERVAL_MINUTES = 15L
     const val PREF_SPEED_ENABLED = "pref_speed_enabled"
     const val PREF_CONFIRM_REMOVE = "pref_confirm_remove"
     const val PREF_START_SCAN_IMMEDIATE = "pref_start_scan_immediate"
@@ -54,10 +52,16 @@ object AppConfig {
     const val PREF_GROUP_ALL_DISPLAY = "pref_group_all_display"
     const val PREF_LANGUAGE = "pref_language"
     const val PREF_UI_MODE_NIGHT = "pref_ui_mode_night"
+    const val PREF_IPV6_ENABLED = "pref_ipv6_enabled"
     const val PREF_PREFER_IPV6 = "pref_prefer_ipv6"
     const val PREF_PROXY_SHARING = "pref_proxy_sharing_enabled"
     const val PREF_ALLOW_INSECURE = "pref_allow_insecure"
+    const val PREF_ENABLE_LOCAL_PROXY = "pref_enable_local_proxy"
     const val PREF_SOCKS_PORT = "pref_socks_port"
+    const val PREF_DYNAMIC_SOCKS_PORT = "pref_dynamic_socks_port"
+    const val PREF_SOCKS_USERNAME = "pref_socks_username"
+    const val PREF_SOCKS_PASSWORD = "pref_socks_password"
+    const val PREF_SOCKS_ENABLE_UDP = "pref_socks_enable_udp"
     const val PREF_REMOTE_DNS = "pref_remote_dns"
     const val PREF_DOMESTIC_DNS = "pref_domestic_dns"
     const val PREF_DNS_HOSTS = "pref_dns_hosts"
@@ -74,6 +78,7 @@ object AppConfig {
     const val PREF_HEV_TUNNEL_RW_TIMEOUT = "pref_hev_tunnel_rw_timeout_v2"
     const val PREF_AUTO_REMOVE_INVALID_AFTER_TEST = "pref_auto_remove_invalid_after_test"
     const val PREF_AUTO_SORT_AFTER_TEST = "pref_auto_sort_after_test"
+    const val PREF_REAL_PING_CONCURRENCY = "pref_real_ping_concurrency"
 
     /** Cache keys. */
     const val CACHE_SUBSCRIPTION_ID = "cache_subscription_id"
@@ -120,7 +125,8 @@ object AppConfig {
     const val TG_CHANNEL_URL = "https://t.me/github_2dust"
     const val DELAY_TEST_URL = "https://www.gstatic.com/generate_204"
     const val DELAY_TEST_URL2 = "https://www.google.com/generate_204"
-//    const val IP_API_URL = "https://speed.cloudflare.com/meta"
+
+    //    const val IP_API_URL = "https://speed.cloudflare.com/meta"
     const val IP_API_URL = "https://api.ip.sb/geoip"
 
     /** DNS server addresses. */
@@ -159,17 +165,15 @@ object AppConfig {
     const val MSG_STATE_RESTART = 5
     const val MSG_MEASURE_DELAY = 6
     const val MSG_MEASURE_DELAY_SUCCESS = 61
-    const val MSG_MEASURE_CONFIG = 7
-    const val MSG_MEASURE_CONFIG_SUCCESS = 71
-    const val MSG_MEASURE_CONFIG_CANCEL = 72
+    const val MSG_MEASURE_CONFIG_START = 7
+    const val MSG_MEASURE_CONFIG_CANCEL = 71
+    const val MSG_MEASURE_CONFIG_SUCCESS = 72
     const val MSG_MEASURE_CONFIG_NOTIFY = 73
     const val MSG_MEASURE_CONFIG_FINISH = 74
 
     /** Notification channel IDs and names. */
     const val RAY_NG_CHANNEL_ID = "RAY_NG_M_CH_ID"
     const val RAY_NG_CHANNEL_NAME = "v2rayNG Background Service"
-    const val SUBSCRIPTION_UPDATE_CHANNEL = "subscription_update_channel"
-    const val SUBSCRIPTION_UPDATE_CHANNEL_NAME = "Subscription Update Service"
 
     /** Protocols Scheme **/
     const val VMESS = "vmess://"
@@ -213,6 +217,8 @@ object AppConfig {
     const val TLS = "tls"
     const val REALITY = "reality"
     const val HEADER_TYPE_HTTP = "http"
+
+    const val UNIDENTIFIED_PACKAGE = "__unknown_app__"
 
     val DNS_ALIDNS_ADDRESSES = arrayListOf("223.5.5.5", "223.6.6.6", "2400:3200::1", "2400:3200:baba::1")
     val DNS_CLOUDFLARE_ONE_ADDRESSES = arrayListOf("1.1.1.1", "1.0.0.1", "2606:4700:4700::1111", "2606:4700:4700::1001")
@@ -274,4 +280,9 @@ object AppConfig {
         "Chocolate4U/Iran-v2ray-rules"
     )
 
+    val BUILTIN_OUTBOUND_TAGS = setOf(
+        TAG_PROXY,
+        TAG_DIRECT,
+        TAG_BLOCKED,
+    )
 }

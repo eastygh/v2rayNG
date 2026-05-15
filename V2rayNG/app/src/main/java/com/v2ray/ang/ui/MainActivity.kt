@@ -5,7 +5,6 @@ import android.content.res.ColorStateList
 import android.net.Uri
 import android.net.VpnService
 import android.os.Bundle
-import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -23,6 +22,7 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayoutMediator
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
+import com.v2ray.ang.core.CoreServiceManager
 import com.v2ray.ang.databinding.ActivityMainBinding
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.enums.PermissionType
@@ -32,7 +32,8 @@ import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.handler.SettingsManager
-import com.v2ray.ang.handler.V2RayServiceManager
+import com.v2ray.ang.handler.SubscriptionUpdater
+import com.v2ray.ang.util.LogUtil
 import com.v2ray.ang.util.Utils
 import com.v2ray.ang.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
@@ -98,6 +99,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
         setupGroupTab()
         setupViewModel()
+        SubscriptionUpdater.sync()
         mainViewModel.reloadServerList()
 
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {
@@ -135,7 +137,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         applyRunningState(isLoading = true, isRunning = false)
 
         if (mainViewModel.isRunning.value == true) {
-            V2RayServiceManager.stopVService(this)
+            CoreServiceManager.stopVService(this)
         } else if (SettingsManager.isVpnMode()) {
             val intent = VpnService.prepare(this)
             if (intent == null) {
@@ -162,12 +164,12 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             toast(R.string.title_file_chooser)
             return
         }
-        V2RayServiceManager.startVService(this)
+        CoreServiceManager.startVService(this)
     }
 
     fun restartV2Ray() {
         if (mainViewModel.isRunning.value == true) {
-            V2RayServiceManager.stopVService(this)
+            CoreServiceManager.stopVService(this)
         }
         lifecycleScope.launch {
             delay(500)
@@ -179,7 +181,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.tvTestState.text = content
     }
 
-    private  fun applyRunningState(isLoading: Boolean, isRunning: Boolean) {
+    private fun applyRunningState(isLoading: Boolean, isRunning: Boolean) {
         if (isLoading) {
             binding.fab.setImageResource(R.drawable.ic_fab_check)
             return
@@ -249,6 +251,11 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
 
         R.id.import_manually_policy_group -> {
             importManually(EConfigType.POLICYGROUP.value)
+            true
+        }
+
+        R.id.import_manually_proxy_chain -> {
+            importManually(EConfigType.PROXYCHAIN.value)
             true
         }
 
@@ -354,6 +361,12 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                     .putExtra("subscriptionId", mainViewModel.subscriptionId)
                     .setClass(this, ServerGroupActivity::class.java)
             )
+        } else if (createConfigType == EConfigType.PROXYCHAIN.value) {
+            startActivity(
+                Intent()
+                    .putExtra("subscriptionId", mainViewModel.subscriptionId)
+                    .setClass(this, ServerProxyChainActivity::class.java)
+            )
         } else {
             startActivity(
                 Intent()
@@ -385,7 +398,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
             val clipboard = Utils.getClipboard(this)
             importBatchConfig(clipboard)
         } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to import config from clipboard", e)
+            LogUtil.e(AppConfig.TAG, "Failed to import config from clipboard", e)
             return false
         }
         return true
@@ -415,7 +428,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                     toastError(R.string.toast_failure)
                     hideLoading()
                 }
-                Log.e(AppConfig.TAG, "Failed to import batch config", e)
+                LogUtil.e(AppConfig.TAG, "Failed to import batch config", e)
             }
         }
     }
@@ -427,7 +440,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         try {
             showFileChooser()
         } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to import config from local file", e)
+            LogUtil.e(AppConfig.TAG, "Failed to import config from local file", e)
             return false
         }
         return true
@@ -569,7 +582,7 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
                 importBatchConfig(input?.bufferedReader()?.readText())
             }
         } catch (e: Exception) {
-            Log.e(AppConfig.TAG, "Failed to read content from URI", e)
+            LogUtil.e(AppConfig.TAG, "Failed to read content from URI", e)
         }
     }
 

@@ -6,19 +6,12 @@ import androidx.preference.CheckBoxPreference
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequest
-import androidx.work.multiprocess.RemoteWorkManager
-import com.v2ray.ang.AngApplication
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.AppConfig.VPN
 import com.v2ray.ang.R
-import com.v2ray.ang.extension.toLongEx
 import com.v2ray.ang.handler.MmkvManager
-import com.v2ray.ang.handler.SubscriptionUpdater
 import com.v2ray.ang.helper.MmkvPreferenceDataStore
 import com.v2ray.ang.util.Utils
-import java.util.concurrent.TimeUnit
 
 class SettingsActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,13 +41,19 @@ class SettingsActivity : BaseActivity() {
         private val fragmentLength by lazy { findPreference<EditTextPreference>(AppConfig.PREF_FRAGMENT_LENGTH) }
         private val fragmentInterval by lazy { findPreference<EditTextPreference>(AppConfig.PREF_FRAGMENT_INTERVAL) }
 
-        private val autoUpdateCheck by lazy { findPreference<CheckBoxPreference>(AppConfig.SUBSCRIPTION_AUTO_UPDATE) }
-        private val autoUpdateInterval by lazy { findPreference<EditTextPreference>(AppConfig.SUBSCRIPTION_AUTO_UPDATE_INTERVAL) }
         private val mode by lazy { findPreference<ListPreference>(AppConfig.PREF_MODE) }
 
         private val hevTunLogLevel by lazy { findPreference<ListPreference>(AppConfig.PREF_HEV_TUNNEL_LOGLEVEL) }
         private val hevTunRwTimeout by lazy { findPreference<EditTextPreference>(AppConfig.PREF_HEV_TUNNEL_RW_TIMEOUT) }
         private val useHevTun by lazy { findPreference<CheckBoxPreference>(AppConfig.PREF_USE_HEV_TUNNEL) }
+
+        private val enableLocalProxy by lazy { findPreference<CheckBoxPreference>(AppConfig.PREF_ENABLE_LOCAL_PROXY) }
+        private val socksPort by lazy { findPreference<EditTextPreference>(AppConfig.PREF_SOCKS_PORT) }
+        private val dynamicSocksPort by lazy { findPreference<CheckBoxPreference>(AppConfig.PREF_DYNAMIC_SOCKS_PORT) }
+        private val socksUsername by lazy { findPreference<EditTextPreference>(AppConfig.PREF_SOCKS_USERNAME) }
+        private val socksPassword by lazy { findPreference<EditTextPreference>(AppConfig.PREF_SOCKS_PASSWORD) }
+        private val socksEnableUdp by lazy { findPreference<CheckBoxPreference>(AppConfig.PREF_SOCKS_ENABLE_UDP) }
+        private val proxySharing by lazy { findPreference<CheckBoxPreference>(AppConfig.PREF_PROXY_SHARING) }
 
         override fun onCreatePreferences(bundle: Bundle?, s: String?) {
             // Use MMKV as the storage backend for all Preferences
@@ -88,15 +87,6 @@ class SettingsActivity : BaseActivity() {
                 true
             }
 
-            autoUpdateCheck?.setOnPreferenceChangeListener { _, newValue ->
-                val value = newValue as Boolean
-                autoUpdateCheck?.isChecked = value
-                autoUpdateInterval?.isEnabled = value
-                autoUpdateInterval?.text?.toLongEx()?.let {
-                    if (newValue) configureUpdateTask(it) else cancelUpdateTask()
-                }
-                true
-            }
             mode?.setOnPreferenceChangeListener { pref, newValue ->
                 val valueStr = newValue.toString()
                 (pref as? ListPreference)?.let { lp ->
@@ -112,15 +102,33 @@ class SettingsActivity : BaseActivity() {
                 updateHevTunSettings(newValue as Boolean)
                 true
             }
+
+            enableLocalProxy?.setOnPreferenceChangeListener { _, newValue ->
+                updateEnableLocalProxy(newValue as Boolean)
+                true
+            }
+
+            dynamicSocksPort?.setOnPreferenceChangeListener { _, newValue ->
+                updateDynamicSocksPort(newValue as Boolean)
+                true
+            }
         }
 
         private fun initPreferenceSummaries() {
             fun updateSummary(pref: androidx.preference.Preference) {
                 when (pref) {
                     is EditTextPreference -> {
-                        pref.summary = pref.text.orEmpty()
+                        if (pref.key == AppConfig.PREF_SOCKS_PASSWORD) {
+                            pref.summary = if (pref.text.isNullOrEmpty()) "" else "******"
+                        } else {
+                            pref.summary = pref.text.orEmpty()
+                        }
                         pref.setOnPreferenceChangeListener { p, newValue ->
-                            p.summary = (newValue as? String).orEmpty()
+                            if (p.key == AppConfig.PREF_SOCKS_PASSWORD) {
+                                p.summary = if ((newValue as? String).isNullOrEmpty()) "" else "******"
+                            } else {
+                                p.summary = (newValue as? String).orEmpty()
+                            }
                             true
                         }
                     }
@@ -159,14 +167,16 @@ class SettingsActivity : BaseActivity() {
             // Initialize mode-dependent UI states
             updateMode(MmkvManager.decodeSettingsString(AppConfig.PREF_MODE, VPN))
 
+            // Initialize local proxy state
+            updateEnableLocalProxy(MmkvManager.decodeSettingsBool(AppConfig.PREF_ENABLE_LOCAL_PROXY, true))
+
             // Initialize mux-dependent UI states
             updateMux(MmkvManager.decodeSettingsBool(AppConfig.PREF_MUX_ENABLED, false))
 
             // Initialize fragment-dependent UI states
             updateFragment(MmkvManager.decodeSettingsBool(AppConfig.PREF_FRAGMENT_ENABLED, false))
 
-            // Initialize auto-update interval state
-            autoUpdateInterval?.isEnabled = MmkvManager.decodeSettingsBool(AppConfig.SUBSCRIPTION_AUTO_UPDATE, false)
+            updateDynamicSocksPort(MmkvManager.decodeSettingsBool(AppConfig.PREF_DYNAMIC_SOCKS_PORT, false))
         }
 
         private fun updateMode(value: String?) {
@@ -203,29 +213,6 @@ class SettingsActivity : BaseActivity() {
             vpnDns?.isEnabled = !enabled
         }
 
-        private fun configureUpdateTask(interval: Long) {
-            val rw = RemoteWorkManager.getInstance(AngApplication.application)
-            rw.cancelUniqueWork(AppConfig.SUBSCRIPTION_UPDATE_TASK_NAME)
-            rw.enqueueUniquePeriodicWork(
-                AppConfig.SUBSCRIPTION_UPDATE_TASK_NAME,
-                ExistingPeriodicWorkPolicy.UPDATE,
-                PeriodicWorkRequest.Builder(
-                    SubscriptionUpdater.UpdateTask::class.java,
-                    interval,
-                    TimeUnit.MINUTES
-                )
-                    .apply {
-                        setInitialDelay(interval, TimeUnit.MINUTES)
-                    }
-                    .build()
-            )
-        }
-
-        private fun cancelUpdateTask() {
-            val rw = RemoteWorkManager.getInstance(AngApplication.application)
-            rw.cancelUniqueWork(AppConfig.SUBSCRIPTION_UPDATE_TASK_NAME)
-        }
-
         private fun updateMux(enabled: Boolean) {
             muxConcurrency?.isEnabled = enabled
             muxXudpConcurrency?.isEnabled = enabled
@@ -258,9 +245,45 @@ class SettingsActivity : BaseActivity() {
             fragmentInterval?.isEnabled = enabled
         }
 
+        private fun updateDynamicSocksPort(enabled: Boolean) {
+            socksPort?.isEnabled = (enableLocalProxy?.isChecked == true) && !enabled
+        }
+
+        private fun updateEnableLocalProxy(enabled: Boolean) {
+            val dynamic = MmkvManager.decodeSettingsBool(AppConfig.PREF_DYNAMIC_SOCKS_PORT, false)
+            socksPort?.isEnabled = enabled && !dynamic
+            dynamicSocksPort?.isEnabled = enabled
+            socksUsername?.isEnabled = enabled
+            socksPassword?.isEnabled = enabled
+            socksEnableUdp?.isEnabled = enabled
+            proxySharing?.isEnabled = enabled
+
+            if (!enabled) {
+                if (appendHttpProxy?.isChecked == true) {
+                    appendHttpProxy?.isChecked = false
+                    MmkvManager.encodeSettings(AppConfig.PREF_APPEND_HTTP_PROXY, false)
+                }
+                appendHttpProxy?.isEnabled = false
+            } else {
+                val vpn = MmkvManager.decodeSettingsString(AppConfig.PREF_MODE) == VPN
+                appendHttpProxy?.isEnabled = vpn
+            }
+        }
+
         private fun updateHevTunSettings(enabled: Boolean) {
             hevTunLogLevel?.isEnabled = enabled
             hevTunRwTimeout?.isEnabled = enabled
+
+            if (enabled) {
+                if (enableLocalProxy?.isChecked == false) {
+                    enableLocalProxy?.isChecked = true
+                    MmkvManager.encodeSettings(AppConfig.PREF_ENABLE_LOCAL_PROXY, true)
+                }
+                enableLocalProxy?.isEnabled = false
+            } else {
+                enableLocalProxy?.isEnabled = true
+            }
+            updateEnableLocalProxy(enableLocalProxy?.isChecked == true)
         }
     }
 
